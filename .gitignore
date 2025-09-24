@@ -2,4 +2,3 @@ build-*/
 build/
 shaders/*.spv
 imgui.ini
-.idea
