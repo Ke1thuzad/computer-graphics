@@ -566,7 +566,7 @@ void initialize() {
 
 	std::uniform_real_distribution<> dist_z(1, 10);
 	std::uniform_real_distribution<> dist_xy(-2, 2);
-	std::uniform_int_distribution<> dist2(-10, 10);
+	std::uniform_int_distribution<> dist2(-20, 20);
 
 	constexpr int cone_vert_n = 66;
 
@@ -605,6 +605,8 @@ void initialize() {
 
 		objects.push_back(cone);
 	}
+
+	objects[0].parent = &objects[1];
 
 
 
@@ -761,8 +763,10 @@ void render(VkCommandBuffer cmd, VkFramebuffer framebuffer) {
 			SceneObject *temp = &object;
 
 			while (temp->parent) {
-				objCumTransform = multiply(objCumTransform, translation(temp->parent->position));
 				temp = temp->parent;
+				objCumTransform = multiply(objCumTransform, scaling(temp->scale));
+				objCumTransform = multiply(objCumTransform, rotation(temp->rotation_axis, temp->rotation));
+				objCumTransform = multiply(objCumTransform, translation(temp->position));
 			}
 
 			objCumTransform = multiply(scaling(object.scale), objCumTransform);
