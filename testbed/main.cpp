@@ -174,30 +174,6 @@ Matrix scaling(const Vector factor) {
 	return result;
 }
 
-std::vector<Vector> getCubeVertices() {
-	return {
-	        {-1.0f, -1.0f,  1.0f},
-			{ 1.0f, -1.0f,  1.0f},
-			{ 1.0f,  1.0f,  1.0f},
-			{-1.0f,  1.0f,  1.0f},
-			{-1.0f, -1.0f, -1.0f},
-			{ 1.0f, -1.0f, -1.0f},
-			{ 1.0f,  1.0f, -1.0f},
-			{-1.0f,  1.0f, -1.0f}
-	};
-}
-
-std::vector<uint32_t> getCubeIndices() {
-	return {
-		0, 2, 1,  0, 3, 2,
-		4, 5, 6,  4, 6, 7,
-		0, 4, 7,  0, 7, 3,
-		1, 2, 6,  1, 6, 5,
-		0, 1, 5,  0, 5, 4,
-		3, 7, 6,  3, 6, 2
-	};
-}
-
 std::vector<Vector> getConeVertices(const int vert_n) {
 	std::vector<Vector> result{};
 
@@ -544,22 +520,6 @@ void initialize() {
 									  }
 	}
 
-	// TODO: You define model vertices and create buffers here
-	// TODO: Index buffer has to be created here too
-	// NOTE: Look for createBuffer function
-
-	// (v0)------(v1)
-	//  |  \       |
-	//  |   `--,   |
-	//  |       \  |
-	// (v3)------(v2)
-	// Vertex vertices[] = {
-	// 	{{-1.0f, -1.0f, 0.0f}, {1, 0, 0}},
-	// 	{{1.0f, -1.0f, 0.0f}, {0, 1, 0}},
-	// 	{{1.0f, 1.0f, 0.0f}, {0, 0, 1}},
-	// 	{{-1.0f, 1.0f, 0.0f}, {0.33f, 0.33f, 0.33f}},
-	// };
-
 	std::random_device rd;
 
 	std::mt19937 e2(rd());
@@ -584,8 +544,6 @@ void initialize() {
 
 		std::vector<uint32_t> indices = getConeIndices(new_vert_n);
 
-		// const int vert_n = vertex_coords.size()
-
 		Vertex *vertices = new Vertex[vertex_coords.size()];
 
 		const Vector colors[3] = {
@@ -603,52 +561,12 @@ void initialize() {
 		cone.vertex_buffer = createBuffer(sizeof(Vertex) * vertex_coords.size(), vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 		cone.index_buffer = createBuffer(sizeof(uint32_t) * indices.size(), indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
+		delete[] vertices;
+
 		objects.push_back(cone);
 	}
 
 	objects[0].parent = &objects[1];
-
-
-
-
-
-	// std::vector<Vector> vertices = getConeVertices(cone_vert_n);
-	// // Vector *vertices = new Vector[vert_n];
-	//
-	// // uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
-	//
-	// std::vector<uint32_t> indices = getConeIndices(vert_n);
-
-	// const size_t ind_n = indices.size();
-	// const int vert_n = 8;
-	//
-	// std::vector<Vector> vertices = getCubeVertices();
-	// // Vector *vertices = new Vector[vert_n];
-	//
-	// // uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
-	// const int ind_n = 36;
-	//
-	// std::vector<uint32_t> indices = getCubeIndicesClockwise();
-
-	// Vertex vertices_colored[vert_n];
-	//
-	// const Vector colors[3] = {
-	// 	{1, 0, 0},
-	// 	{0, 1, 0},
-	// 	{0, 0, 1}
-	// };
-	//
-	// for (int i = 0; i < vert_n; ++i) {
-	// 	vertices_colored[i] = {vertices[i], colors[i % 3]};
-	// }
-	//
-	// index_count += ind_n;
-	//
-	// vertex_buffer = createBuffer(sizeof(vertices_colored), vertices_colored,
-	// 							 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-	//
-	// index_buffer = createBuffer(sizeof(uint32_t) * ind_n, indices.data(),
-	// 							VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 }
 
 void shutdown() {
