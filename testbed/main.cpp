@@ -1,9 +1,13 @@
+#define _USE_MATH_DEFINES
+
+#include <array>
 #include <cstdint>
 #include <climits>
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <random>
 
 #include <veekay/veekay.hpp>
 
@@ -26,14 +30,13 @@ struct Vector {
 
 struct Vertex {
 	Vector position;
-	// NOTE: You can add more attributes
+	Vector color;
 };
 
-// NOTE: These variable will be available to shaders through push constant uniform
 struct ShaderConstants {
 	Matrix projection;
 	Matrix transform;
-	Vector color;
+	// Vector color;
 };
 
 struct VulkanBuffer {
@@ -41,19 +44,44 @@ struct VulkanBuffer {
 	VkDeviceMemory memory;
 };
 
+struct SceneObject {
+	int64_t id;
+
+	SceneObject *parent;
+
+	Vector position = {0, 0, 5};
+	Vector scale = {1, 1, 1};
+	float rotation = 0;
+	float rotation_speed = 1;
+	bool spin = false;
+	Vector rotation_axis = {0, 1, 0};
+
+	VulkanBuffer vertex_buffer;
+	VulkanBuffer index_buffer;
+	uint32_t index_count;
+};
+
 VkShaderModule vertex_shader_module;
 VkShaderModule fragment_shader_module;
 VkPipelineLayout pipeline_layout;
 VkPipeline pipeline;
 
-// NOTE: Declare buffers and other variables here
-VulkanBuffer vertex_buffer;
-VulkanBuffer index_buffer;
+std::vector<SceneObject> objects;
 
-Vector model_position = {0.0f, 0.0f, 5.0f};
-float model_rotation;
-Vector model_color = {0.5f, 1.0f, 0.7f };
-bool model_spin = true;
+double time_prev = 0;
+float dt;
+
+	// NOTE: Declare buffers and other variables here
+// VulkanBuffer vertex_buffer;
+// VulkanBuffer index_buffer;
+//
+// uint32_t index_count = 0;
+
+// Vector model_position = {0.0f, 0.0f, 5.0f};
+// float model_rotation;
+// float model_rotation_speed = 1;
+// Vector model_color = {0.5f, 1.0f, 0.7f };
+// bool model_spin = false;
 
 Matrix identity() {
 	Matrix result{};
@@ -82,7 +110,7 @@ Matrix projection(float fov, float aspect_ratio, float near, float far) {
 	return result;
 }
 
-Matrix translation(Vector vector) {
+Matrix translation(const Vector vector) {
 	Matrix result = identity();
 
 	result.m[3][0] = vector.x;
@@ -101,9 +129,9 @@ Matrix rotation(Vector axis, float angle) {
 	axis.y /= length;
 	axis.z /= length;
 
-	float sina = sinf(angle);
-	float cosa = cosf(angle);
-	float cosv = 1.0f - cosa;
+	const float sina = sinf(angle);
+	const float cosa = cosf(angle);
+	const float cosv = 1.0f - cosa;
 
 	result.m[0][0] = (axis.x * axis.x * cosv) + cosa;
 	result.m[0][1] = (axis.x * axis.y * cosv) + (axis.z * sina);
@@ -134,6 +162,73 @@ Matrix multiply(const Matrix& a, const Matrix& b) {
 	}
 
 	return result;
+}
+
+Matrix scaling(const Vector factor) {
+	Matrix result = identity();
+
+	result.m[0][0] = factor.x;
+	result.m[1][1] = factor.y;
+	result.m[2][2] = factor.z;
+
+	return result;
+}
+
+std::vector<Vector> getCubeVertices() {
+	return {
+	        {-1.0f, -1.0f,  1.0f},
+			{ 1.0f, -1.0f,  1.0f},
+			{ 1.0f,  1.0f,  1.0f},
+			{-1.0f,  1.0f,  1.0f},
+			{-1.0f, -1.0f, -1.0f},
+			{ 1.0f, -1.0f, -1.0f},
+			{ 1.0f,  1.0f, -1.0f},
+			{-1.0f,  1.0f, -1.0f}
+	};
+}
+
+std::vector<uint32_t> getCubeIndices() {
+	return {
+		0, 2, 1,  0, 3, 2,
+		4, 5, 6,  4, 6, 7,
+		0, 4, 7,  0, 7, 3,
+		1, 2, 6,  1, 6, 5,
+		0, 1, 5,  0, 5, 4,
+		3, 7, 6,  3, 6, 2
+	};
+}
+
+std::vector<Vector> getConeVertices(const int vert_n) {
+	std::vector<Vector> result{};
+
+	for (float t = 0; t + 0.0001f < 2 * M_PI; t += (2 * M_PI) / (vert_n - 2)) {
+		result.push_back({std::sin(t), 0, std::cos(t)});
+	}
+
+	result.push_back({0, -1, 0});
+
+	result.push_back({0, 0, 0});
+
+	return result;
+}
+
+std::vector<uint32_t> getConeIndices(const int vert_n) {
+	std::vector<uint32_t> indices{};
+
+	for (int i = 0; i < vert_n - 2; ++i) {
+
+		// Pike
+		indices.push_back(i);
+		indices.push_back((i + 1) % (vert_n - 2));
+		indices.push_back(vert_n - 2);
+
+		// Base
+		indices.push_back(vert_n - 1);
+		indices.push_back((i + 1) % (vert_n - 2));
+		indices.push_back(i);
+	}
+
+	return indices;
 }
 
 // NOTE: Loads shader byte code from file
@@ -308,15 +403,12 @@ void initialize() {
 				.format = VK_FORMAT_R32G32B32_SFLOAT, // NOTE: 3-component vector of floats
 				.offset = offsetof(Vertex, position), // NOTE: Offset of "position" field in a Vertex struct
 			},
-			// NOTE: If you want more attributes per vertex, declare them here
-#if 0
 			{
-				.location = 1, // NOTE: Second attribute
+				.location = 1,
 				.binding = 0,
-				.format = VK_FORMAT_XXX,
-				.offset = offset(Vertex, your_attribute),
-			},
-#endif
+				.format = VK_FORMAT_R32G32B32_SFLOAT,
+				.offset = offsetof(Vertex, color),
+			}
 		};
 
 		// NOTE: Bring 
@@ -324,7 +416,7 @@ void initialize() {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 			.vertexBindingDescriptionCount = 1,
 			.pVertexBindingDescriptions = &buffer_binding,
-			.vertexAttributeDescriptionCount = sizeof(attributes) / sizeof(attributes[0]),
+			.vertexAttributeDescriptionCount = std::size(attributes),
 			.pVertexAttributeDescriptions = attributes,
 		};
 
@@ -390,9 +482,9 @@ void initialize() {
 		// NOTE: Let fragment shader write all the color channels
 		VkPipelineColorBlendAttachmentState attachment_info{
 			.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
-			                  VK_COLOR_COMPONENT_G_BIT |
-			                  VK_COLOR_COMPONENT_B_BIT |
-			                  VK_COLOR_COMPONENT_A_BIT,
+							  VK_COLOR_COMPONENT_G_BIT |
+							  VK_COLOR_COMPONENT_B_BIT |
+							  VK_COLOR_COMPONENT_A_BIT,
 		};
 
 		// NOTE: Let rasterizer just copy resulting pixels onto a buffer, don't blend
@@ -409,7 +501,7 @@ void initialize() {
 		// NOTE: Declare constant memory region visible to vertex and fragment shaders
 		VkPushConstantRange push_constants{
 			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
-			              VK_SHADER_STAGE_FRAGMENT_BIT,
+						  VK_SHADER_STAGE_FRAGMENT_BIT,
 			.size = sizeof(ShaderConstants),
 		};
 
@@ -422,12 +514,12 @@ void initialize() {
 
 		// NOTE: Create pipeline layout
 		if (vkCreatePipelineLayout(device, &layout_info,
-		                           nullptr, &pipeline_layout) != VK_SUCCESS) {
+								   nullptr, &pipeline_layout) != VK_SUCCESS) {
 			std::cerr << "Failed to create Vulkan pipeline layout\n";
 			veekay::app.running = false;
 			return;
-		}
-		
+								   }
+
 		VkGraphicsPipelineCreateInfo info{
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 			.stageCount = 2,
@@ -445,11 +537,11 @@ void initialize() {
 
 		// NOTE: Create graphics pipeline
 		if (vkCreateGraphicsPipelines(device, nullptr,
-		                              1, &info, nullptr, &pipeline) != VK_SUCCESS) {
+									  1, &info, nullptr, &pipeline) != VK_SUCCESS) {
 			std::cerr << "Failed to create Vulkan pipeline\n";
 			veekay::app.running = false;
 			return;
-		}
+									  }
 	}
 
 	// TODO: You define model vertices and create buffers here
@@ -461,28 +553,110 @@ void initialize() {
 	//  |   `--,   |
 	//  |       \  |
 	// (v3)------(v2)
-	Vertex vertices[] = {
-		{{-1.0f, -1.0f, 0.0f}},
-		{{1.0f, -1.0f, 0.0f}},
-		{{1.0f, 1.0f, 0.0f}},
-		{{-1.0f, 1.0f, 0.0f}},
-	};
+	// Vertex vertices[] = {
+	// 	{{-1.0f, -1.0f, 0.0f}, {1, 0, 0}},
+	// 	{{1.0f, -1.0f, 0.0f}, {0, 1, 0}},
+	// 	{{1.0f, 1.0f, 0.0f}, {0, 0, 1}},
+	// 	{{-1.0f, 1.0f, 0.0f}, {0.33f, 0.33f, 0.33f}},
+	// };
 
-	uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
+	std::random_device rd;
 
-	vertex_buffer = createBuffer(sizeof(vertices), vertices,
-	                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	std::mt19937 e2(rd());
 
-	index_buffer = createBuffer(sizeof(indices), indices,
-	                            VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	std::uniform_real_distribution<> dist_z(1, 10);
+	std::uniform_real_distribution<> dist_xy(-2, 2);
+	std::uniform_int_distribution<> dist2(-10, 10);
+
+	constexpr int cone_vert_n = 66;
+
+	constexpr int starting_cone_n = 5;
+
+	for (int i = 0; i < starting_cone_n; ++i) {
+		SceneObject cone{
+			.id = (int64_t)i,
+			.position = {(float)dist_xy(e2), (float)dist_xy(e2), (float)dist_z(e2)},
+		};
+
+		int new_vert_n = cone_vert_n + dist2(e2);
+
+		std::vector<Vector> vertex_coords = getConeVertices(new_vert_n);
+
+		std::vector<uint32_t> indices = getConeIndices(new_vert_n);
+
+		// const int vert_n = vertex_coords.size()
+
+		Vertex *vertices = new Vertex[vertex_coords.size()];
+
+		const Vector colors[3] = {
+			{1, 0, 0},
+			{0, 1, 0},
+			{0, 0, 1}
+		};
+
+		for (int i = 0; i < vertex_coords.size(); ++i) {
+			vertices[i] = {vertex_coords[i], colors[i % 3]};
+		}
+
+		cone.index_count = indices.size();
+
+		cone.vertex_buffer = createBuffer(sizeof(Vertex) * vertex_coords.size(), vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		cone.index_buffer = createBuffer(sizeof(uint32_t) * indices.size(), indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+		objects.push_back(cone);
+	}
+
+
+
+
+
+	// std::vector<Vector> vertices = getConeVertices(cone_vert_n);
+	// // Vector *vertices = new Vector[vert_n];
+	//
+	// // uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
+	//
+	// std::vector<uint32_t> indices = getConeIndices(vert_n);
+
+	// const size_t ind_n = indices.size();
+	// const int vert_n = 8;
+	//
+	// std::vector<Vector> vertices = getCubeVertices();
+	// // Vector *vertices = new Vector[vert_n];
+	//
+	// // uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
+	// const int ind_n = 36;
+	//
+	// std::vector<uint32_t> indices = getCubeIndicesClockwise();
+
+	// Vertex vertices_colored[vert_n];
+	//
+	// const Vector colors[3] = {
+	// 	{1, 0, 0},
+	// 	{0, 1, 0},
+	// 	{0, 0, 1}
+	// };
+	//
+	// for (int i = 0; i < vert_n; ++i) {
+	// 	vertices_colored[i] = {vertices[i], colors[i % 3]};
+	// }
+	//
+	// index_count += ind_n;
+	//
+	// vertex_buffer = createBuffer(sizeof(vertices_colored), vertices_colored,
+	// 							 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	//
+	// index_buffer = createBuffer(sizeof(uint32_t) * ind_n, indices.data(),
+	// 							VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 }
 
 void shutdown() {
 	VkDevice& device = veekay::app.vk_device;
 
 	// NOTE: Destroy resources here, do not cause leaks in your program!
-	destroyBuffer(index_buffer);
-	destroyBuffer(vertex_buffer);
+	for (const auto &object: objects) {
+		destroyBuffer(object.index_buffer);
+		destroyBuffer(object.vertex_buffer);
+	}
 
 	vkDestroyPipeline(device, pipeline, nullptr);
 	vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
@@ -492,18 +666,45 @@ void shutdown() {
 
 void update(double time) {
 	ImGui::Begin("Controls:");
-	ImGui::InputFloat3("Translation", reinterpret_cast<float*>(&model_position));
-	ImGui::SliderFloat("Rotation", &model_rotation, 0.0f, 2.0f * M_PI);
-	ImGui::Checkbox("Spin?", &model_spin);
+
+	int i = 0;
+
+	for (auto &object: objects) {
+		++i;
+		int parent_id = object.parent ? (int) object.parent->id : -1;
+
+		ImGui::PushID(i);
+		ImGui::Text("Object #%d:", i);
+		ImGui::InputFloat3("Translation", reinterpret_cast<float*>(&object.position));
+		ImGui::InputFloat3("Scale", reinterpret_cast<float*>(&object.scale));
+		ImGui::SliderFloat("Rotation", &object.rotation, 0.0f, 2.0f * M_PI);
+		ImGui::InputFloat3("Rotation Axis", reinterpret_cast<float*>(&object.rotation_axis));
+		ImGui::Checkbox("Spin?", &object.spin);
+		ImGui::SliderFloat("Rotation Speed", &object.rotation_speed, 0.0f, 10);
+		ImGui::InputInt("Parent ID ", &parent_id);
+		ImGui::Separator();
+		ImGui::PopID();
+
+		if (ImGui::IsItemEdited() && parent_id != -1) {
+			object.parent = &objects[parent_id];
+		}
+	}
+
 	// TODO: Your GUI stuff here
 	ImGui::End();
 
-	// NOTE: Animation code and other runtime variable updates go here
-	if (model_spin) {
-		model_rotation = float(time);
-	}
+	dt = time - time_prev;
 
-	model_rotation = fmodf(model_rotation, 2.0f * M_PI);
+	// NOTE: Animation code and other runtime variable updates go here
+
+	for (auto &object: objects) {
+		if (object.spin) {
+			object.rotation += dt * object.rotation_speed;
+		}
+
+		object.rotation = fmodf(object.rotation, 2.0f * M_PI);
+	}
+	time_prev = time;
 }
 
 void render(VkCommandBuffer cmd, VkFramebuffer framebuffer) {
@@ -541,40 +742,52 @@ void render(VkCommandBuffer cmd, VkFramebuffer framebuffer) {
 		vkCmdBeginRenderPass(cmd, &info, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
-	// TODO: Vulkan rendering code here
 	// NOTE: ShaderConstant updates, vkCmdXXX expected to be here
 	{
 		// NOTE: Use our new shiny graphics pipeline
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
 
-		// NOTE: Use our quad vertex buffer
-		VkDeviceSize offset = 0;
-		vkCmdBindVertexBuffers(cmd, 0, 1, &vertex_buffer.buffer, &offset);
+		for (auto &object: objects) {
+			// NOTE: Use our quad vertex buffer
+			VkDeviceSize offset = 0;
+			vkCmdBindVertexBuffers(cmd, 0, 1, &object.vertex_buffer.buffer, &offset);
 
-		// NOTE: Use our quad index buffer
-		vkCmdBindIndexBuffer(cmd, index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
+			// NOTE: Use our quad index buffer
+			vkCmdBindIndexBuffer(cmd, object.index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
 
-		// NOTE: Variables like model_XXX were declared globally
-		ShaderConstants constants{
-			.projection = projection(
-				camera_fov,
-				float(veekay::app.window_width) / float(veekay::app.window_height),
-				camera_near_plane, camera_far_plane),
+			Matrix objCumTransform = translation(object.position);
 
-			.transform = multiply(rotation({0.0f, 1.0f, 0.0f}, model_rotation),
-			                      translation(model_position)),
+			SceneObject *temp = &object;
 
-			.color = model_color,
-		};
+			while (temp->parent) {
+				objCumTransform = multiply(objCumTransform, translation(temp->parent->position));
+				temp = temp->parent;
+			}
 
-		// NOTE: Update constant memory with new shader constants
-		vkCmdPushConstants(cmd, pipeline_layout,
-		                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-		                   0, sizeof(ShaderConstants), &constants);
+			objCumTransform = multiply(scaling(object.scale), objCumTransform);
 
-		// NOTE: Draw 6 indices (3 vertices * 2 triangles), 1 group, no offsets
-		vkCmdDrawIndexed(cmd, 6, 1, 0, 0, 0);
+			objCumTransform = multiply(rotation(object.rotation_axis, object.rotation), objCumTransform);
+
+			// NOTE: Variables like model_XXX were declared globally
+			ShaderConstants constants{
+				.projection = projection(
+					camera_fov,
+					static_cast<float>(veekay::app.window_width) / static_cast<float>(veekay::app.window_height),
+					camera_near_plane, camera_far_plane),
+
+				.transform = objCumTransform,
+
+				// .color = model_color,
+			};
+
+			// NOTE: Update constant memory with new shader constants
+			vkCmdPushConstants(cmd, pipeline_layout,
+							   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+							   0, sizeof(ShaderConstants), &constants);
+
+			vkCmdDrawIndexed(cmd, object.index_count, 1, 0, 0, 0);
+		}
 	}
 
 	vkCmdEndRenderPass(cmd);
