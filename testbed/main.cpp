@@ -71,17 +71,6 @@ std::vector<SceneObject> objects;
 double time_prev = 0;
 float dt;
 
-	// NOTE: Declare buffers and other variables here
-// VulkanBuffer vertex_buffer;
-// VulkanBuffer index_buffer;
-//
-// uint32_t index_count = 0;
-
-// Vector model_position = {0.0f, 0.0f, 5.0f};
-// float model_rotation;
-// float model_rotation_speed = 1;
-// Vector model_color = {0.5f, 1.0f, 0.7f };
-// bool model_spin = false;
 
 Matrix identity() {
 	Matrix result{};
@@ -676,7 +665,11 @@ void render(VkCommandBuffer cmd, VkFramebuffer framebuffer) {
 			// NOTE: Use our quad index buffer
 			vkCmdBindIndexBuffer(cmd, object.index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
 
-			Matrix objCumTransform = translation(object.position);
+			Matrix objCumTransform = scaling(object.scale);
+
+			objCumTransform = multiply(objCumTransform, rotation(object.rotation_axis, object.rotation));
+
+			objCumTransform = multiply(objCumTransform, translation(object.position));
 
 			SceneObject *temp = &object;
 
@@ -686,10 +679,6 @@ void render(VkCommandBuffer cmd, VkFramebuffer framebuffer) {
 				objCumTransform = multiply(objCumTransform, rotation(temp->rotation_axis, temp->rotation));
 				objCumTransform = multiply(objCumTransform, translation(temp->position));
 			}
-
-			objCumTransform = multiply(scaling(object.scale), objCumTransform);
-
-			objCumTransform = multiply(rotation(object.rotation_axis, object.rotation), objCumTransform);
 
 			// NOTE: Variables like model_XXX were declared globally
 			ShaderConstants constants{
