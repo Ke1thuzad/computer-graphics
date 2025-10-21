@@ -1,25 +1,20 @@
 #version 450
 
-// NOTE: Attributes must match the declaration of VkVertexInputAttribute array
 layout (location = 0) in vec3 v_position;
-layout (location = 1) in vec3 vert_color;
-// layout (location = 1) in type name;
 
-layout (location = 0) out vec3 v_color;
+layout (binding = 0, std140) uniform SceneUniforms {
+	mat4 view_projection;
+};
 
-// NOTE: Must match declaration order of a C struct
-layout (push_constant, std430) uniform ShaderConstants {
-	mat4 projection;
-	mat4 transform;
+layout (binding = 1, std140) uniform ModelUniforms {
+	mat4 model;
+	vec3 albedo_color;
 };
 
 void main() {
 	vec4 point = vec4(v_position, 1.0f);
-	vec4 transformed = transform * point;
-	vec4 projected = projection * transformed;
+	vec4 transformed = model * point;
+	vec4 projected = view_projection * transformed;
 
-	v_color = vert_color;
-
-	// NOTE: Write our projected point out
 	gl_Position = projected;
 }
