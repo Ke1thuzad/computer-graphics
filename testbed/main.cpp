@@ -44,21 +44,25 @@ struct VulkanBuffer {
 	VkDeviceMemory memory;
 };
 
+struct Mesh {
+	VulkanBuffer vertex_buffer;
+	VulkanBuffer index_buffer;
+	uint32_t index_count;
+};
+
 struct SceneObject {
-	int64_t id;
+	int id;
 
 	SceneObject *parent;
 
 	Vector position = {0, 0, 5};
 	Vector scale = {1, 1, 1};
 	float rotation = 0;
-	float rotation_speed = 1;
-	bool spin = false;
-	Vector rotation_axis = {0, 1, 0};
+	float rotation_speed = 5;
+	bool spin = true;
+	Vector rotation_axis = {0.5f, 1, 0};
 
-	VulkanBuffer vertex_buffer;
-	VulkanBuffer index_buffer;
-	uint32_t index_count;
+	Mesh mesh;
 };
 
 VkShaderModule vertex_shader_module;
@@ -517,13 +521,13 @@ void initialize() {
 	std::uniform_real_distribution<> dist_xy(-2, 2);
 	std::uniform_int_distribution<> dist2(-20, 20);
 
-	constexpr int cone_vert_n = 66;
+	constexpr int cone_vert_n = 10000;
 
-	constexpr int starting_cone_n = 5;
+	constexpr int starting_cone_n = 10;
 
 	for (int i = 0; i < starting_cone_n; ++i) {
 		SceneObject cone{
-			.id = (int64_t)i,
+			.id = i,
 			.position = {(float)dist_xy(e2), (float)dist_xy(e2), (float)dist_z(e2)},
 		};
 
@@ -545,10 +549,10 @@ void initialize() {
 			vertices[i] = {vertex_coords[i], colors[i % 3]};
 		}
 
-		cone.index_count = indices.size();
+		cone.mesh.index_count = indices.size();
 
-		cone.vertex_buffer = createBuffer(sizeof(Vertex) * vertex_coords.size(), vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-		cone.index_buffer = createBuffer(sizeof(uint32_t) * indices.size(), indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+		cone.mesh.vertex_buffer = createBuffer(sizeof(Vertex) * vertex_coords.size(), vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		cone.mesh.index_buffer = createBuffer(sizeof(uint32_t) * indices.size(), indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
 		delete[] vertices;
 
@@ -563,8 +567,8 @@ void shutdown() {
 
 	// NOTE: Destroy resources here, do not cause leaks in your program!
 	for (const auto &object: objects) {
-		destroyBuffer(object.index_buffer);
-		destroyBuffer(object.vertex_buffer);
+		destroyBuffer(object.mesh.index_buffer);
+		destroyBuffer(object.mesh.vertex_buffer);
 	}
 
 	vkDestroyPipeline(device, pipeline, nullptr);
@@ -579,8 +583,13 @@ void update(double time) {
 	int i = 0;
 
 	for (auto &object: objects) {
-		++i;
-		int parent_id = object.parent ? (int) object.parent->id : -1;
+		int old_parent = -1;
+		int parent_id = -1;
+
+		if (object.parent) {
+			old_parent = object.parent->id;
+			parent_id = object.parent->id;
+		}
 
 		ImGui::PushID(i);
 		ImGui::Text("Object #%d:", i);
@@ -594,12 +603,13 @@ void update(double time) {
 		ImGui::Separator();
 		ImGui::PopID();
 
-		if (ImGui::IsItemEdited() && parent_id != -1) {
+		if (old_parent != parent_id && parent_id > -1 && parent_id < objects.size() && parent_id != object.id) {
 			object.parent = &objects[parent_id];
 		}
+
+		++i;
 	}
 
-	// TODO: Your GUI stuff here
 	ImGui::End();
 
 	dt = time - time_prev;
@@ -660,10 +670,10 @@ void render(VkCommandBuffer cmd, VkFramebuffer framebuffer) {
 		for (auto &object: objects) {
 			// NOTE: Use our quad vertex buffer
 			VkDeviceSize offset = 0;
-			vkCmdBindVertexBuffers(cmd, 0, 1, &object.vertex_buffer.buffer, &offset);
+			vkCmdBindVertexBuffers(cmd, 0, 1, &object.mesh.vertex_buffer.buffer, &offset);
 
 			// NOTE: Use our quad index buffer
-			vkCmdBindIndexBuffer(cmd, object.index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(cmd, object.mesh.index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
 
 			Matrix objCumTransform = scaling(object.scale);
 
@@ -697,7 +707,7 @@ void render(VkCommandBuffer cmd, VkFramebuffer framebuffer) {
 							   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 							   0, sizeof(ShaderConstants), &constants);
 
-			vkCmdDrawIndexed(cmd, object.index_count, 1, 0, 0, 0);
+			vkCmdDrawIndexed(cmd, object.mesh.index_count, 1, 0, 0, 0);
 		}
 	}
 
