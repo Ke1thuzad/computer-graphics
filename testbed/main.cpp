@@ -79,6 +79,7 @@ namespace {
         float radius;
         veekay::vec3 color; float _pad0;
 
+        PointLight() : position({0, 0, 0}), radius(5), color({1, 1, 1}) {}
         PointLight(veekay::vec3 position, veekay::vec3 color, float radius) : position(position), color(color), radius(radius) {}
     };
 
@@ -90,6 +91,7 @@ namespace {
         veekay::vec3 direction;
         float outer_angle;
 
+        SpotLight() : position({0, 0, 0}), radius(5), color({1, 1, 1}), angle(0.9f), direction({0, 0, 1}), outer_angle(0.81f) {}
         SpotLight(veekay::vec3 position, veekay::vec3 color, veekay::vec3 direction, float radius, float angle, float outer_angle) : position(position), color(color), direction(direction), radius(radius), angle(angle), outer_angle(outer_angle) {}
     };
 
@@ -754,7 +756,7 @@ namespace {
             .shininess = 25,
         });
 
-        point_lights.emplace_back(PointLight({0, 0, 0}, {0.81f, 0.42f, 0.15f}, 10));
+        point_lights.emplace_back(PointLight({3, -3.0f, 2}, {0.81f, 0.42f, 0.15f}, 5));
         spot_lights.emplace_back(SpotLight(camera.position, {0.81f, 0.42f, 0.15f}, {0, 0, 1}, 10, 0.91f, 0.82f));
     }
 
@@ -786,49 +788,72 @@ namespace {
     }
 
     void update(double time) {
-        int i = 0;
+        ImGui::Begin("Lights Control");
 
-        ImGui::Begin("Controls:");
         ImGui::Checkbox("Look At", &is_look_at);
-        ImGui::BeginGroup();
-        ImGui::Text("Point Lights:");
-        ImGui::Separator();
 
-        for (auto & point_light : point_lights) {
-            ImGui::PushID(i++);
+        if (ImGui::TreeNodeEx("Point Lights", ImGuiTreeNodeFlags_DefaultOpen)) {
+            for (int i = 0; i < point_lights.size(); ++i) {
+                auto& light = point_lights[i];
 
-            ImGui::InputFloat3("Position", point_light.position.elements);
-            ImGui::ColorEdit3("Color", point_light.color.elements);
-            ImGui::InputFloat("Radius", &point_light.radius);
+                ImGui::PushID(&light);
 
-            ImGui::PopID();
+                if (ImGui::TreeNodeEx(&light, ImGuiTreeNodeFlags_DefaultOpen, "Point Light %d", i)) {
+                    ImGui::InputFloat3("Position", light.position.elements);
+                    ImGui::ColorEdit3("Color", light.color.elements);
+                    ImGui::InputFloat("Radius", &light.radius);
 
-            ImGui::Separator();
+                    if (ImGui::Button("Delete")) {
+                        point_lights.erase(point_lights.begin() + i);
+                        ImGui::TreePop();
+                        ImGui::PopID();
+                        break;
+                    }
+
+                    ImGui::TreePop();
+                }
+                ImGui::PopID();
+            }
+
+            if (point_lights.size() < max_point_lights && ImGui::Button("Add Point Light")) {
+                point_lights.emplace_back();
+            }
+
+            ImGui::TreePop();
         }
 
-        ImGui::EndGroup();
+        if (ImGui::TreeNodeEx("Spot Lights", ImGuiTreeNodeFlags_DefaultOpen)) {
+            for (int i = 0; i < spot_lights.size(); ++i) {
+                auto& light = spot_lights[i];
+                ImGui::PushID(&light);
 
-        ImGui::BeginGroup();
-        ImGui::Text("Spot Lights:");
-        ImGui::Separator();
+                if (ImGui::TreeNodeEx(&light, ImGuiTreeNodeFlags_DefaultOpen, "Spot Light %d", i)) {
+                    ImGui::InputFloat3("Position", light.position.elements);
+                    ImGui::ColorEdit3("Color", light.color.elements);
+                    ImGui::InputFloat3("Direction", light.direction.elements);
+                    ImGui::InputFloat("Radius", &light.radius);
+                    ImGui::InputFloat("Cutoff angle", &light.angle);
+                    ImGui::InputFloat("Outer Cutoff angle", &light.outer_angle);
 
+                    if (ImGui::Button("Delete")) {
+                        spot_lights.erase(spot_lights.begin() + i);
+                        ImGui::TreePop();
+                        ImGui::PopID();
+                        break;
+                    }
 
-        for (auto & spot_light : spot_lights) {
-            ImGui::PushID(i++);
+                    ImGui::TreePop();
+                }
+                ImGui::PopID();
+            }
 
-            ImGui::InputFloat3("Position", spot_light.position.elements);
-            ImGui::ColorEdit3("Color", spot_light.color.elements);
-            ImGui::InputFloat3("Direction", spot_light.direction.elements);
-            ImGui::InputFloat("Radius", &spot_light.radius);
-            ImGui::InputFloat("Cutoff angle", &spot_light.angle);
-            ImGui::InputFloat("Outer Cutoff angle", &spot_light.outer_angle);
+            if (spot_lights.size() < max_spot_lights && ImGui::Button("Add Spot Light")) {
+                spot_lights.emplace_back();
+            }
 
-            ImGui::PopID();
-
-            ImGui::Separator();
+            ImGui::TreePop();
         }
 
-        ImGui::EndGroup();
         ImGui::End();
 
         if (!ImGui::IsWindowHovered()) {
@@ -900,17 +925,14 @@ namespace {
         }
 
         *static_cast<SceneUniforms *>(scene_uniforms_buffer->mapped_region) = scene_uniforms;
-        std::copy(model_uniforms.begin(),
-                  model_uniforms.end(),
-                  static_cast<ModelUniforms *>(model_uniforms_buffer->mapped_region));
+        std::ranges::copy(model_uniforms,
+                          static_cast<ModelUniforms *>(model_uniforms_buffer->mapped_region));
 
-        std::copy(point_lights.begin(),
-                  point_lights.end(),
-                  static_cast<PointLight *>(point_lights_buffer->mapped_region));
+        std::ranges::copy(point_lights,
+                          static_cast<PointLight *>(point_lights_buffer->mapped_region));
 
-        std::copy(spot_lights.begin(),
-                  spot_lights.end(),
-                  static_cast<SpotLight *>(spot_lights_buffer->mapped_region));
+        std::ranges::copy(spot_lights,
+                          static_cast<SpotLight *>(spot_lights_buffer->mapped_region));
     }
 
     void render(VkCommandBuffer cmd, VkFramebuffer framebuffer) {

@@ -78,7 +78,11 @@ void main() {
 
 		float dist = distance(f_position, lpos);
 
-		float attenuation = 1.0f / (constant + linear * dist + quadratic * dist * dist);
+		if (dist > radius) continue;
+
+		float falloff = 1.0f - smoothstep(0.9f, 1.0f, dist / radius);
+
+		float attenuation = falloff / (constant + linear * dist + quadratic * dist * dist);
 
 		vec3 light_dir = normalize(lpos - f_position);
 
@@ -91,8 +95,7 @@ void main() {
 
 		vec3 light_intensity = attenuation * shade * (diffuse * light.color + specular);
 
-		point_lights_color = vec3(attenuation, 0, 0);
-//		point_lights_color += light_intensity;
+		point_lights_color += light_intensity;
 	}
 
 	vec3 spot_lights_color = vec3(0);
@@ -111,7 +114,9 @@ void main() {
 
 		vec3 light_dir = normalize(lpos - f_position);
 
-		if (distance(lpos, f_position) > radius) continue;
+		float dist = distance(lpos, f_position);
+
+		if (dist > radius) continue;
 
 		float theta = dot(light_dir, normalize(-direction));
 
@@ -125,13 +130,14 @@ void main() {
 
 			float epsilon = angle - outer_angle;
 
+			float falloff = 1.0f - smoothstep(0.9f, 1.0f, dist / radius);
 			float dimming = clamp((theta - outer_angle) / epsilon, 0.0f, 1.0f);
 
-			vec3 light_intensity = dimming * shade * light_color * (diffuse + specular);
+			vec3 light_intensity = falloff * dimming * shade * light_color * (diffuse + specular);
 
 			spot_lights_color += light_intensity;
 		}
 	}
 
-	final_color = vec4(0 + point_lights_color + 0, 1.0f);
+	final_color = vec4(sun_color + point_lights_color + spot_lights_color, 1.0f);
 }
