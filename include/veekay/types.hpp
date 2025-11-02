@@ -1,7 +1,10 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include <cstdint>
 #include <cmath>
+#include <math.h>
 
 namespace veekay {
 
@@ -384,10 +387,10 @@ union mat4 {
 		return result;
 	}
 
-	static mat4 projection(float fov, float aspect_ratio, float near, float far) {
+	static mat4 projection(const float fov, const float aspect_ratio, const float near, const float far) {
 		mat4 result{};
 
-		const float radians = fov * M_PI / 180.0f;
+		const float radians = fov * static_cast<float>(M_PI) / 180.0f;
 		const float cot = 1.0f / tanf(radians / 2.0f);
 
 		result[0][0] = cot / aspect_ratio;
@@ -426,8 +429,8 @@ union mat4 {
 		return result;
 	}
 
-	vec4& operator[](size_t index) { return columns[index]; }
-	const vec4& operator[](size_t index) const { return columns[index]; }
+	vec4& operator[](const size_t index) { return columns[index]; }
+	const vec4& operator[](const size_t index) const { return columns[index]; }
 };
 
 } // namespace veekay
