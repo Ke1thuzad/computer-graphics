@@ -44,29 +44,40 @@ layout (binding = 3, std430) readonly buffer SpotLights {
 	SpotLight spot_lights[];
 };
 
-void main() {
-	float shininess = specular_color_shininess.w;
+vec3 blinn_phong(vec3 light_dir, vec3 light_color, vec3 view_dir, vec3 normal, vec3 albedo, vec3 specular_color, float shininess) {
+	vec3 half_vector = normalize(light_dir + view_dir);
 
+	float diffuse_strength = max(dot(normal, light_dir), 0.0f);
+	vec3 diffuse = diffuse_strength * albedo;
+
+	float specular_strength = pow(max(dot(normal, half_vector), 0.0f), shininess);
+	vec3 specular = specular_strength * specular_color;
+
+	return light_color * (diffuse + specular);
+}
+
+void main() {
+	vec3 normal = normalize(f_normal);
+	vec3 view_dir = normalize(view_position - f_position);
+
+	float shininess = specular_color_shininess.w;
 	vec3 specular_color = specular_color_shininess.xyz;
 
-	vec3 normal = normalize(f_normal);
-
-	vec3 norm_sun_light_dir = normalize(sun_light_direction);
-
-	vec3 view_dir = normalize(view_position - f_position);
-	vec3 half_vector = normalize(view_dir - norm_sun_light_dir);
-
-	float sun_shade = max(0.0f, -dot(norm_sun_light_dir, normal));
-	vec3 sun_diffuse = albedo_color;
-	vec3 sun_specular = specular_color * pow(max(0.0f, dot(normal, half_vector)), shininess);
-
-	vec3 sun_light_intensity = sun_shade * sun_light_color * (sun_diffuse + sun_specular);
+	vec3 norm_sun_light_dir = normalize(-sun_light_direction);
+	vec3 sun_light_intensity = blinn_phong(
+		norm_sun_light_dir,
+		sun_light_color,
+		view_dir,
+		normal,
+		albedo_color,
+		specular_color,
+		shininess
+	);
 
 	vec3 sun_color = ambient_light_intensity + sun_light_intensity;
 
 	vec3 point_lights_color = vec3(0);
-
-	float constant = 1;
+	float constant = 1.0f;
 	float linear = 0.09f;
 	float quadratic = 0.05f;
 
@@ -77,27 +88,27 @@ void main() {
 		float radius = light.position_radius.w;
 
 		float dist = distance(f_position, lpos);
-
 		if (dist > radius) continue;
 
 		float falloff = 1.0f - smoothstep(0.9f, 1.0f, dist / radius);
-
 		float attenuation = falloff / (constant + linear * dist + quadratic * dist * dist);
 
 		vec3 light_dir = normalize(lpos - f_position);
 
-		half_vector = normalize(view_dir + light_dir);
+		vec3 light_intensity = blinn_phong(
+		light_dir,
+		light.color,
+		view_dir,
+		normal,
+		albedo_color,
+		specular_color,
+		shininess
+		);
 
-		float shade = max(0.0f, dot(light_dir, normal));
-
-		vec3 diffuse = albedo_color;
-		vec3 specular = specular_color * pow(max(0.0f, dot(normal, half_vector)), shininess);
-
-		vec3 light_intensity = attenuation * shade * (diffuse * light.color + specular);
-
-		point_lights_color += light_intensity;
+		point_lights_color += attenuation * light_intensity;
 	}
 
+	// Прожекторы
 	vec3 spot_lights_color = vec3(0);
 
 	for (uint i = 0; i < spot_lights_count; ++i) {
@@ -113,7 +124,6 @@ void main() {
 		float angle = light.color_angle.w;
 
 		vec3 light_dir = normalize(lpos - f_position);
-
 		float dist = distance(lpos, f_position);
 
 		if (dist > radius) continue;
@@ -121,21 +131,21 @@ void main() {
 		float theta = dot(light_dir, normalize(-direction));
 
 		if (theta > outer_angle) {
-			half_vector = normalize(view_dir + light_dir);
-
-			float shade = max(0.0f, dot(light_dir, normal));
-
-			vec3 diffuse = albedo_color;
-			vec3 specular = specular_color * pow(max(0.0f, dot(normal, half_vector)), shininess);
-
 			float epsilon = angle - outer_angle;
-
 			float falloff = 1.0f - smoothstep(0.9f, 1.0f, dist / radius);
 			float dimming = clamp((theta - outer_angle) / epsilon, 0.0f, 1.0f);
 
-			vec3 light_intensity = falloff * dimming * shade * light_color * (diffuse + specular);
+			vec3 light_intensity = blinn_phong(
+			light_dir,
+			light_color,
+			view_dir,
+			normal,
+			albedo_color,
+			specular_color,
+			shininess
+			);
 
-			spot_lights_color += light_intensity;
+			spot_lights_color += falloff * dimming * light_intensity;
 		}
 	}
 

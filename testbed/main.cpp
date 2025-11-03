@@ -856,7 +856,7 @@ namespace {
 
         ImGui::End();
 
-        if (!ImGui::IsWindowHovered()) {
+        if (!ImGui::IsWindowHovered() && !ImGui::IsWindowFocused()) {
             using namespace veekay::input;
 
             if (mouse::isButtonDown(mouse::Button::left)) {
