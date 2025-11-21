@@ -724,24 +724,35 @@ namespace {
             .specular_color = veekay::vec3{1.0f, 1.0f, 1.0f},
             .shininess = 500,
         });
-
         models.emplace_back(Model{
-            .mesh = cube_mesh,
+            .mesh = plane_mesh,
             .transform = Transform{
-                .position = {-2.0f, -0.5f, -1.5f},
-                .rotation = {0.5f, 0.9f, 0.9f},
+                .position = {0, -5, 5},
+                .rotation = {0, toRadians(90), 0},
             },
-            .albedo_color = veekay::vec3{1.0f, 0.0f, 0.0f},
+            .albedo_color = veekay::vec3{0.5f, 0.5f, 0.5f},
             .specular_color = veekay::vec3{1.0f, 1.0f, 1.0f},
             .shininess = 10000,
         });
 
         models.emplace_back(Model{
-            .mesh = cube_mesh,
+            .mesh = plane_mesh,
             .transform = Transform{
-                .position = {1.5f, -0.5f, -0.5f},
+                .position = {5, -5, 0},
+                .rotation = {0, 0, -toRadians(90)},
             },
-            .albedo_color = veekay::vec3{0.0f, 1.0f, 0.0f},
+            .albedo_color = veekay::vec3{0.5f, 0.5f, 0.5f},
+            .specular_color = veekay::vec3{1.0f, 1.0f, 1.0f},
+            .shininess = 10000,
+        });
+
+        models.emplace_back(Model{
+            .mesh = plane_mesh,
+            .transform = Transform{
+                .position = {-5, -5, 0},
+                .rotation = {0, 0, toRadians(90)},
+            },
+            .albedo_color = veekay::vec3{0.6f, 0.6f, 0.6f},
             .specular_color = veekay::vec3{1.0f, 1.0f, 1.0f},
             .shininess = 10,
         });
@@ -749,9 +760,31 @@ namespace {
         models.emplace_back(Model{
             .mesh = cube_mesh,
             .transform = Transform{
-                .position = {0.0f, -0.5f, 1.0f},
+                .position = {-2.0f, -0.5f, -1.5f},
+                .scale = {0.5f, 0.9f, 0.9f},
             },
-            .albedo_color = veekay::vec3{0.0f, 0.0f, 1.0f},
+            .albedo_color = veekay::vec3{1.0f, 0.5f, 0.1f},
+            .specular_color = veekay::vec3{1.0f, 1.0f, 1.0f},
+            .shininess = 10000,
+        });
+
+        models.emplace_back(Model{
+            .mesh = cube_mesh,
+            .transform = Transform{
+                .position = {1.5f, -0.5f, 0.5f},
+            },
+            .albedo_color = veekay::vec3{0.6f, 1.0f, 0.2f},
+            .specular_color = veekay::vec3{1.0f, 1.0f, 1.0f},
+            .shininess = 10,
+        });
+
+        models.emplace_back(Model{
+            .mesh = cube_mesh,
+            .transform = Transform{
+                .position = {0.0f, -2.5f, 1.0f},
+                .scale = {2, 1, 1},
+            },
+            .albedo_color = veekay::vec3{0.3f, 0.1f, 1.0f},
             .specular_color = veekay::vec3{1.0f, 1.0f, 1.0f},
             .shininess = 25,
         });
@@ -905,7 +938,7 @@ namespace {
         SceneUniforms scene_uniforms{
             .view_projection = camera.view_projection(aspect_ratio, view_mat),
             .view_position = camera.position,
-            .ambient_light_intensity = {0.1f, 0.1f, 0.1f},
+            .ambient_light_intensity = {0.075f, 0.075f, 0.075f},
             .sun_light_direction = {0.2f, 0.4f, 0.3f},
             .sun_light_color = {1, 1, 1},
             .point_lights_count = static_cast<uint32_t>(point_lights.size()),

@@ -74,7 +74,7 @@ void main() {
 		shininess
 	);
 
-	vec3 sun_color = ambient_light_intensity + sun_light_intensity;
+	vec3 sun_color = ambient_light_intensity * albedo_color + sun_light_intensity;
 
 	vec3 point_lights_color = vec3(0);
 	float constant = 1.0f;
