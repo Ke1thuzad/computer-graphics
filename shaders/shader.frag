@@ -17,7 +17,7 @@ layout (location = 2) in vec2 f_uv;
 
 layout (location = 0) out vec4 final_color;
 
-layout (binding = 0, std140) uniform SceneUniforms {
+layout (set = 0, binding = 0, std140) uniform SceneUniforms {
 	mat4 view_projection;
 	vec3 view_position;
 
@@ -27,22 +27,26 @@ layout (binding = 0, std140) uniform SceneUniforms {
 	vec3 sun_light_color;
 
 	layout (offset = 128) uint point_lights_count;
-	layout (offset = 132) uint spot_lights_count;
+	uint spot_lights_count;
 };
 
-layout (binding = 1, std140) uniform ModelUniforms {
+layout (set = 0, binding = 1, std140) uniform ModelUniforms {
 	mat4 model;
 	vec3 albedo_color;
 	vec4 specular_color_shininess;
 };
 
-layout (binding = 2, std430) readonly buffer PointLights {
+layout (set = 0, binding = 2, std430) readonly buffer PointLights {
 	PointLight point_lights[];
 };
 
-layout (binding = 3, std430) readonly buffer SpotLights {
+layout (set = 0, binding = 3, std430) readonly buffer SpotLights {
 	SpotLight spot_lights[];
 };
+
+layout (set = 1, binding = 0) uniform sampler2D albedo_texture;
+layout (set = 1, binding = 1) uniform sampler2D specular_texture;
+layout (set = 1, binding = 2) uniform sampler2D emissive_texture;
 
 vec3 blinn_phong(vec3 light_dir, vec3 light_color, vec3 view_dir, vec3 normal, vec3 albedo, vec3 specular_color, float shininess) {
 	vec3 half_vector = normalize(light_dir + view_dir);
@@ -57,11 +61,27 @@ vec3 blinn_phong(vec3 light_dir, vec3 light_color, vec3 view_dir, vec3 normal, v
 }
 
 void main() {
+	vec2 uv = f_uv;
+
+	float freq = 15;
+	float amplitude = 0.1f;
+
+//	uv.x += sin(f_uv.y * freq) * amplitude;
+//	uv.y += cos(f_uv.x * freq) * amplitude;
+
+	vec3 albedo_texel = texture(albedo_texture, uv).rgb;
+	vec3 specular_map = texture(specular_texture, uv).rgb;
+	vec3 emissive_map = texture(emissive_texture, uv).rgb;
+
+	vec3 albedo_color_final = albedo_texel * albedo_color;
+
 	vec3 normal = normalize(f_normal);
 	vec3 view_dir = normalize(view_position - f_position);
 
 	float shininess = specular_color_shininess.w;
 	vec3 specular_color = specular_color_shininess.xyz;
+
+	specular_color *= specular_map;
 
 	vec3 norm_sun_light_dir = normalize(-sun_light_direction);
 	vec3 sun_light_intensity = blinn_phong(
@@ -69,12 +89,12 @@ void main() {
 		sun_light_color,
 		view_dir,
 		normal,
-		albedo_color,
+		albedo_color_final,
 		specular_color,
 		shininess
 	);
 
-	vec3 sun_color = ambient_light_intensity * albedo_color + sun_light_intensity;
+	vec3 sun_color = ambient_light_intensity * albedo_color_final + sun_light_intensity;
 
 	vec3 point_lights_color = vec3(0);
 	float constant = 1.0f;
@@ -100,7 +120,7 @@ void main() {
 		light.color,
 		view_dir,
 		normal,
-		albedo_color,
+		albedo_color_final,
 		specular_color,
 		shininess
 		);
@@ -140,7 +160,7 @@ void main() {
 			light_color,
 			view_dir,
 			normal,
-			albedo_color,
+			albedo_color_final,
 			specular_color,
 			shininess
 			);
@@ -149,5 +169,5 @@ void main() {
 		}
 	}
 
-	final_color = vec4(sun_color + point_lights_color + spot_lights_color, 1.0f);
+	final_color = vec4((sun_color + point_lights_color + spot_lights_color) * (1 - emissive_map) + albedo_color_final * emissive_map, 1.0f);
 }

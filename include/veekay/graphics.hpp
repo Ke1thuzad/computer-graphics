@@ -12,6 +12,8 @@ struct Buffer {
 	Buffer(size_t size, const void* data,
 	       VkBufferUsageFlags usage);
 	~Buffer();
+
+	static size_t structureAlignment(size_t struct_size);
 };
 
 struct Texture {
@@ -29,6 +31,7 @@ struct Texture {
 	        uint32_t width, uint32_t height,
 	        VkFormat format,
 	        const void* pixels);
+
 	~Texture();
 };
 

@@ -3,7 +3,13 @@ include(FetchContent)
 
 project(testbed LANGUAGES C CXX)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp
+		../include/testbed/uniforms.h
+		../include/testbed/main.h
+		../include/testbed/objects.h
+		../include/testbed/constants.h
+		../source/objects.cpp
+		../include/testbed/utils.h)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED TRUE CXX_STANDARD 20)
 
