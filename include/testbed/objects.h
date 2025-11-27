@@ -94,4 +94,26 @@ struct Camera {
     veekay::mat4 view_projection(float aspect_ratio, const veekay::mat4 &view) const;
 };
 
+struct {
+    // Объекты для изображения, куда будет записываться информация о глубине
+    VkFormat depth_image_format;
+    VkImage depth_image;
+    VkDeviceMemory depth_image_memory;
+    VkImageView depth_image_view;
+
+    VkShaderModule vertex_shader; // Простой шейдер для трансформации геометрии и не больше
+
+    // Объекты графического конвейера и описания ресурсов шейдера для записи глубины в текстуру
+    VkDescriptorSetLayout descriptor_set_layout;
+    VkDescriptorSet descriptor_set;
+    VkPipelineLayout pipeline_layout;
+    VkPipeline pipeline;
+
+    veekay::graphics::Buffer* uniform_buffer; // Буфер для единственной матрицы проекции теней
+    VkSampler sampler; // Специальный сэмплер для текстуры (карты) теней
+
+    veekay::mat4 matrix; // Сама матрица проекции теней
+} shadow;
+
+
 #endif //VEEKAY_OBJECTS_H

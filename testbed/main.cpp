@@ -29,22 +29,22 @@ namespace {
         VkDescriptorSet descriptor_set;
 
         VkPipelineLayout pipeline_layout;
-        // VkPipeline pipeline;
+        VkPipeline pipeline;
 
         PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR;
         PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR;
 
-        VkPipeline offscreen_pipeline;
+        // VkPipeline offscreen_pipeline;
 
-        VkFormat os_color_image_format;
-        VkImage os_color_image;
-        VkDeviceMemory os_color_image_memory;
-        VkImageView os_color_image_view;
-
-        VkFormat os_depth_image_format;
-        VkImage os_depth_image;
-        VkDeviceMemory os_depth_image_memory;
-        VkImageView os_depth_image_view;
+        // VkFormat os_color_image_format;
+        // VkImage os_color_image;
+        // VkDeviceMemory os_color_image_memory;
+        // VkImageView os_color_image_view;
+        //
+        // VkFormat os_depth_image_format;
+        // VkImage os_depth_image;
+        // VkDeviceMemory os_depth_image_memory;
+        // VkImageView os_depth_image_view;
 
         veekay::graphics::Buffer *scene_uniforms_buffer;
         veekay::graphics::Buffer *model_uniforms_buffer;
@@ -234,84 +234,84 @@ namespace {
         );
 
         {
-            {
-                os_color_image_format = VK_FORMAT_R8G8B8A8_UNORM;
-
-                VkImageCreateInfo info{
-                    .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                    .imageType = VK_IMAGE_TYPE_2D, // 2D изображение
-                    .format = os_color_image_format, // Имеет формат R8G8B8A8_UNORM
-                // Имеет размеры окна приложения:
-                    .extent = { veekay::app.window_width, veekay::app.window_height, 1 },
-                    .mipLevels = 1, // Имеет один mip, т.е. основное изображение
-                    .arrayLayers = 1, // Изображение единственное, т.е. нет массива
-                    .samples = VK_SAMPLE_COUNT_1_BIT, // Нет мульти сэмплирования
-                    .tiling = VK_IMAGE_TILING_OPTIMAL, // Оптимальное расположение в памяти GPU
-                    .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | // Для рисования в него и
-                             VK_IMAGE_USAGE_SAMPLED_BIT,          // можно читать из шейдера
-                };
-
-                vkCreateImage(device, &info, nullptr, &os_color_image);
-            }
-
-            {
-                VkMemoryRequirements requirements;
-                vkGetImageMemoryRequirements(device, os_color_image, &requirements);
-
-                VkPhysicalDeviceMemoryProperties properties;
-                vkGetPhysicalDeviceMemoryProperties(physical_device, &properties);
-
-                VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-                uint32_t index = UINT_MAX;
-
-                for (uint32_t i = 0; i < properties.memoryTypeCount; ++i) {
-                    const VkMemoryType& type = properties.memoryTypes[i];
-
-                    if ((requirements.memoryTypeBits & (1 << i)) &&
-                        (type.propertyFlags & flags) == flags) {
-                        index = i;
-                        break;
-                        }
-                }
-
-                VkMemoryAllocateInfo info{
-                    .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-                    .allocationSize = requirements.size,
-                    .memoryTypeIndex = index,
-                };
-
-                vkAllocateMemory(device, &info, nullptr, &os_color_image_memory);
-                vkBindImageMemory(device, os_color_image, os_color_image_memory, 0);
-
-            }
-
-            {
-                VkImageViewCreateInfo info{
-                    .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                    .image = os_color_image,
-                    .viewType = VK_IMAGE_VIEW_TYPE_2D,
-                    .format = os_color_image_format,
-                    .subresourceRange{
-                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                        .baseMipLevel = 0,
-                        .levelCount = 1,
-                        .baseArrayLayer = 0,
-                        .layerCount = 1,
-                    },
-                };
-
-                vkCreateImageView(device, &info, nullptr, &os_color_image_view);
-            }
+            // {
+            //     os_color_image_format = VK_FORMAT_R8G8B8A8_UNORM;
+            //
+            //     VkImageCreateInfo info{
+            //         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            //         .imageType = VK_IMAGE_TYPE_2D, // 2D изображение
+            //         .format = os_color_image_format, // Имеет формат R8G8B8A8_UNORM
+            //     // Имеет размеры окна приложения:
+            //         .extent = { veekay::app.window_width, veekay::app.window_height, 1 },
+            //         .mipLevels = 1, // Имеет один mip, т.е. основное изображение
+            //         .arrayLayers = 1, // Изображение единственное, т.е. нет массива
+            //         .samples = VK_SAMPLE_COUNT_1_BIT, // Нет мульти сэмплирования
+            //         .tiling = VK_IMAGE_TILING_OPTIMAL, // Оптимальное расположение в памяти GPU
+            //         .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | // Для рисования в него и
+            //                  VK_IMAGE_USAGE_SAMPLED_BIT,          // можно читать из шейдера
+            //     };
+            //
+            //     vkCreateImage(device, &info, nullptr, &os_color_image);
+            // }
+            //
+            // {
+            //     VkMemoryRequirements requirements;
+            //     vkGetImageMemoryRequirements(device, os_color_image, &requirements);
+            //
+            //     VkPhysicalDeviceMemoryProperties properties;
+            //     vkGetPhysicalDeviceMemoryProperties(physical_device, &properties);
+            //
+            //     VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            //
+            //     uint32_t index = UINT_MAX;
+            //
+            //     for (uint32_t i = 0; i < properties.memoryTypeCount; ++i) {
+            //         const VkMemoryType& type = properties.memoryTypes[i];
+            //
+            //         if ((requirements.memoryTypeBits & (1 << i)) &&
+            //             (type.propertyFlags & flags) == flags) {
+            //             index = i;
+            //             break;
+            //             }
+            //     }
+            //
+            //     VkMemoryAllocateInfo info{
+            //         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            //         .allocationSize = requirements.size,
+            //         .memoryTypeIndex = index,
+            //     };
+            //
+            //     vkAllocateMemory(device, &info, nullptr, &os_color_image_memory);
+            //     vkBindImageMemory(device, os_color_image, os_color_image_memory, 0);
+            //
+            // }
+            //
+            // {
+            //     VkImageViewCreateInfo info{
+            //         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            //         .image = os_color_image,
+            //         .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            //         .format = os_color_image_format,
+            //         .subresourceRange{
+            //             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            //             .baseMipLevel = 0,
+            //             .levelCount = 1,
+            //             .baseArrayLayer = 0,
+            //             .layerCount = 1,
+            //         },
+            //     };
+            //
+            //     vkCreateImageView(device, &info, nullptr, &os_color_image_view);
+            // }
 
             {
                 VkFormat candidates[] = { // Набрали распространенных кандидатов
                     VK_FORMAT_D32_SFLOAT,
                     VK_FORMAT_D32_SFLOAT_S8_UINT,
-                VK_FORMAT_D24_UNORM_S8_UINT,
+                    VK_FORMAT_D24_UNORM_S8_UINT,
                 };
 
-                os_depth_image_format = VK_FORMAT_UNDEFINED;
+                shadow.depth_image_format = VK_FORMAT_UNDEFINED;
 
                 for (const auto& f : candidates) {
                     VkFormatProperties properties;
@@ -319,7 +319,7 @@ namespace {
 
                     // Если формат поддерживает оптимальное расположение в памяти GPU, то выбираем его
                     if (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-                        os_depth_image_format = f;
+                        shadow.depth_image_format = f;
                         break;
                     }
                 }
@@ -327,8 +327,8 @@ namespace {
                 VkImageCreateInfo info{
                     .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                     .imageType = VK_IMAGE_TYPE_2D,
-                    .format = os_depth_image_format,
-                    .extent = { veekay::app.window_width, veekay::app.window_height, 1 },
+                    .format = shadow.depth_image_format,
+                    .extent = { shadow_map_size, shadow_map_size, 1 },
                     .mipLevels = 1,
                     .arrayLayers = 1,
                     .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -337,12 +337,12 @@ namespace {
                               VK_IMAGE_USAGE_SAMPLED_BIT,
                 };
 
-                vkCreateImage(device, &info, nullptr, &os_depth_image);
+                vkCreateImage(device, &info, nullptr, &shadow.depth_image);
             }
 
             {
                 VkMemoryRequirements requirements;
-                vkGetImageMemoryRequirements(device, os_depth_image, &requirements);
+                vkGetImageMemoryRequirements(device, shadow.depth_image, &requirements);
 
                 VkPhysicalDeviceMemoryProperties properties;
                 vkGetPhysicalDeviceMemoryProperties(physical_device, &properties);
@@ -367,16 +367,16 @@ namespace {
                     .memoryTypeIndex = index,
                 };
 
-                vkAllocateMemory(device, &info, nullptr, &os_depth_image_memory);
-                vkBindImageMemory(device, os_depth_image, os_depth_image_memory, 0);
+                vkAllocateMemory(device, &info, nullptr, &shadow.depth_image_memory);
+                vkBindImageMemory(device, shadow.depth_image, shadow.depth_image_memory, 0);
             }
 
             {
                 VkImageViewCreateInfo info{
                     .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                    .image = os_depth_image,
+                    .image = shadow.depth_image,
                     .viewType = VK_IMAGE_VIEW_TYPE_2D,
-                    .format = os_depth_image_format,
+                    .format = shadow.depth_image_format,
                     .subresourceRange{
                         .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
                         .baseMipLevel = 0,
@@ -386,7 +386,7 @@ namespace {
                     },
                 };
 
-                vkCreateImageView(device, &info, nullptr, &os_depth_image_view);
+                vkCreateImageView(device, &info, nullptr, &shadow.depth_image_view);
             }
         }
 
@@ -405,7 +405,22 @@ namespace {
                 return;
             }
 
+            shadow.vertex_shader = loadShaderModule("./shaders/shadow.vert.spv");
+            if (!shadow.vertex_shader) {
+                std::cerr << "Failed to load Vulkan shadow vertex shader from file\n";
+                veekay::app.running = false;
+                return;
+            }
+
             VkPipelineShaderStageCreateInfo stage_infos[2];
+            VkPipelineShaderStageCreateInfo shadow_stage_infos[1];
+
+            shadow_stage_infos[0] = VkPipelineShaderStageCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .module = shadow.vertex_shader,
+                .pName = "main",
+            };
 
             stage_infos[0] = VkPipelineShaderStageCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -448,6 +463,23 @@ namespace {
                 },
             };
 
+            VkVertexInputAttributeDescription shadow_attributes[] = {
+                {
+                    .location = 0,
+                    .binding = 0,
+                    .format = VK_FORMAT_R32G32B32_SFLOAT,
+                    .offset = offsetof(Vertex, position),
+                },
+            };
+
+            VkPipelineVertexInputStateCreateInfo shadow_input_state_info{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+                .vertexBindingDescriptionCount = 1,
+                .pVertexBindingDescriptions = &buffer_binding,
+                .vertexAttributeDescriptionCount = std::size(shadow_attributes),
+                .pVertexAttributeDescriptions = attributes,
+            };
+
             VkPipelineVertexInputStateCreateInfo input_state_info{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
                 .vertexBindingDescriptionCount = 1,
@@ -476,15 +508,61 @@ namespace {
                 .minSampleShading = 1.0f,
             };
 
-            // VkPipelineViewportStateCreateInfo viewport_info{
-            //     .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-            //
-            //     .viewportCount = 1,
-            //     .pViewports = &viewport,
-            //
-            //     .scissorCount = 1,
-            //     .pScissors = &scissor,
-            // };
+            VkPipelineRasterizationStateCreateInfo shadow_raster_info{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+                .polygonMode = VK_POLYGON_MODE_FILL,
+                .cullMode = VK_CULL_MODE_FRONT_BIT, // Отсекаем передние треугольники
+                .frontFace = VK_FRONT_FACE_CLOCKWISE,
+                .depthBiasEnable = true, // Включаем смещение при записи глубины
+                .lineWidth = 1.0f,
+            };
+
+            VkPipelineColorBlendStateCreateInfo shadow_blend_info{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+                // Мы не записываем цвет, поэтому убрана маска записи каналов цвета
+            };
+
+            VkPipelineRenderingCreateInfoKHR shadow_format_info{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+            // Мы не записываем цвет, поэтому убрано описание формата пикселей изображения цвета
+                .depthAttachmentFormat = shadow.depth_image_format,
+            };
+
+            VkDynamicState shadow_dyn_states[] = {
+                VK_DYNAMIC_STATE_VIEWPORT,
+                VK_DYNAMIC_STATE_SCISSOR,
+                VK_DYNAMIC_STATE_DEPTH_BIAS,
+            };
+
+            VkPipelineDynamicStateCreateInfo shadow_dyn_state_info{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+                .dynamicStateCount = std::size(shadow_dyn_states),
+                .pDynamicStates = shadow_dyn_states,
+            };
+
+            VkViewport viewport{
+                .x = 0.0f,
+                .y = 0.0f,
+                .width = static_cast<float>(veekay::app.window_width),
+                .height = static_cast<float>(veekay::app.window_height),
+                .minDepth = 0.0f,
+                .maxDepth = 1.0f,
+            };
+
+            VkRect2D scissor{
+                .offset = {0, 0},
+                .extent = {veekay::app.window_width, veekay::app.window_height},
+            };
+
+            VkPipelineViewportStateCreateInfo viewport_info{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+
+                .viewportCount = 1,
+                .pViewports = &viewport,
+
+                .scissorCount = 1,
+                .pScissors = &scissor,
+            };
 
             VkPipelineDepthStencilStateCreateInfo depth_info{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
@@ -519,19 +597,71 @@ namespace {
 
             {
                 {
+                    VkDescriptorSetLayoutBinding bindings[] = {
+                        { // Тут будет матрица проекции для теневой текстуры
+                            .binding = 0,
+                            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            .descriptorCount = 1,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                    },
+                        { // Тут будет структура информации про модель (ModelUniforms)
+                            .binding = 1,
+                            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            .descriptorCount = 1,
+                            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                        }
+                    };
+
+                    VkDescriptorSetLayoutCreateInfo info{
+                        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+                        .bindingCount = std::size(bindings),
+                        .pBindings = bindings,
+                    };
+
+                    vkCreateDescriptorSetLayout(device, &info, nullptr, &shadow.descriptor_set_layout);
+                }
+
+                {
+                    VkDescriptorSetAllocateInfo info {
+                        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+                        .descriptorPool = descriptor_pool,
+                        .descriptorSetCount = 1,
+                        .pSetLayouts = &shadow.descriptor_set_layout,
+                    };
+
+                    vkAllocateDescriptorSets(device, &info, &shadow.descriptor_set);
+
+                    VkPipelineLayoutCreateInfo layout_info{
+                        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                        .setLayoutCount = 1,
+                        .pSetLayouts = &shadow.descriptor_set_layout,
+                    };
+
+                    vkCreatePipelineLayout(device, &layout_info, nullptr,
+                                           &shadow.pipeline_layout);
+
+                }
+            }
+
+            {
+                {
                     VkDescriptorPoolSize pools[] = {
                         {
                             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                            .descriptorCount = 8,
+                            .descriptorCount = 32,
                         },
                         {
                             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                            .descriptorCount = 8,
+                            .descriptorCount = 32,
                         },
                         {
                             .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                            .descriptorCount = 8,
-                        }
+                            .descriptorCount = 32,
+                        },
+                        {
+                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .descriptorCount = 32
+                        },
                     };
 
                     VkDescriptorPoolCreateInfo info{
@@ -665,21 +795,72 @@ namespace {
                 }
             }
 
-            VkPipelineLayoutCreateInfo layout_info{
-                .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-                .setLayoutCount = 2,
-                .pSetLayouts = descriptor_set_layouts,
-            };
+            {
+                VkPipelineLayoutCreateInfo layout_info{
+                    .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                    .setLayoutCount = 2,
+                    .pSetLayouts = descriptor_set_layouts,
+                };
 
-            if (vkCreatePipelineLayout(device, &layout_info,
-                                       nullptr, &pipeline_layout) != VK_SUCCESS) {
-                std::cerr << "Failed to create Vulkan pipeline layout\n";
-                veekay::app.running = false;
-                return;
+                if (vkCreatePipelineLayout(device, &layout_info,
+                                           nullptr, &pipeline_layout) != VK_SUCCESS) {
+                    std::cerr << "Failed to create Vulkan pipeline layout\n";
+                    veekay::app.running = false;
+                    return;
+                                           }
+
+                VkGraphicsPipelineCreateInfo info{
+                    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+                    .stageCount = 2,
+                    .pStages = stage_infos,
+                    .pVertexInputState = &input_state_info,
+                    .pInputAssemblyState = &assembly_state_info,
+                    .pViewportState = &viewport_info,
+                    .pRasterizationState = &raster_info,
+                    .pMultisampleState = &sample_info,
+                    .pDepthStencilState = &depth_info,
+                    .pColorBlendState = &blend_info,
+                    .layout = pipeline_layout,
+                    .renderPass = veekay::app.vk_render_pass,
+                };
+
+                if (vkCreateGraphicsPipelines(device, nullptr,
+                                              1, &info, nullptr, &pipeline) != VK_SUCCESS) {
+                    std::cerr << "Failed to create Vulkan pipeline\n";
+                    veekay::app.running = false;
+                    return;
+                                              }
             }
 
+            // VkDynamicState dyn_states[2] = {
+            //     VK_DYNAMIC_STATE_VIEWPORT, // Область отрисовки
+            //     VK_DYNAMIC_STATE_SCISSOR,  // Область выреза
+            // };
+            //
+            // VkPipelineDynamicStateCreateInfo dyn_state_info{
+            //     .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+            //     .dynamicStateCount = std::size(dyn_states),
+            //         .pDynamicStates = dyn_states,
+            // };
+            //
+            // Теперь эти данные выше больше не статичны, их можно задать каждый кадр
+            // VkPipelineViewportStateCreateInfo viewport_info{
+            //     .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+            //     .viewportCount = 1,
+            //     .scissorCount = 1,
+            // };
+            //
+            // // Какие форматы компонентов изображения стоит ожидать граф. конвейеру
+            // VkPipelineRenderingCreateInfoKHR format_info{
+            //     .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+            //     .colorAttachmentCount = 1,
+            //     .pColorAttachmentFormats = &os_color_image_format,
+            //     .depthAttachmentFormat = os_depth_image_format,
+            // };
+            //
             // VkGraphicsPipelineCreateInfo info{
             //     .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            //     .pNext = &format_info, // VkPipelineRenderingCreateInfo является расширением
             //     .stageCount = 2,
             //     .pStages = stage_infos,
             //     .pVertexInputState = &input_state_info,
@@ -689,61 +870,55 @@ namespace {
             //     .pMultisampleState = &sample_info,
             //     .pDepthStencilState = &depth_info,
             //     .pColorBlendState = &blend_info,
+            //     .pDynamicState = &dyn_state_info,
             //     .layout = pipeline_layout,
-            //     .renderPass = veekay::app.vk_render_pass,
+            //     .renderPass = nullptr
             // };
             //
-            // if (vkCreateGraphicsPipelines(device, nullptr,
-            //                               1, &info, nullptr, &pipeline) != VK_SUCCESS) {
-            //     std::cerr << "Failed to create Vulkan pipeline\n";
-            //     veekay::app.running = false;
-            //     return;
-            // }
+            // VkGraphicsPipelineCreateInfo info{
+            //     .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            //     .pNext = &format_info, // VkPipelineRenderingCreateInfo является расширением
+            //     .stageCount = 2,
+            //     .pStages = stage_infos,
+            //     .pVertexInputState = &input_state_info,
+            //     .pInputAssemblyState = &assembly_state_info,
+            //     .pViewportState = &viewport_info,
+            //     .pRasterizationState = &raster_info,
+            //     .pMultisampleState = &sample_info,
+            //     .pDepthStencilState = &depth_info,
+            //     .pColorBlendState = &blend_info,
+            //     .pDynamicState = &dyn_state_info,
+            //     .layout = pipeline_layout,
+            //     .renderPass = nullptr
+            // };
 
-            VkDynamicState dyn_states[2] = {
-                VK_DYNAMIC_STATE_VIEWPORT, // Область отрисовки
-                VK_DYNAMIC_STATE_SCISSOR,  // Область выреза
-            };
+            // vkCreateGraphicsPipelines(device, nullptr, 1, &info, nullptr, &pipeline);
 
-            VkPipelineDynamicStateCreateInfo dyn_state_info{
-                .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-                .dynamicStateCount = std::size(dyn_states),
-                    .pDynamicStates = dyn_states,
-            };
+            {
+                VkPipelineRenderingCreateInfoKHR format_info{
+                    .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+                    .colorAttachmentCount = 1,
+                    .depthAttachmentFormat = shadow.depth_image_format,
+                };
 
-            // Теперь эти данные выше больше не статичны, их можно задать каждый кадр
-            VkPipelineViewportStateCreateInfo viewport_info{
-                .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-                .viewportCount = 1,
-                .scissorCount = 1,
-            };
+                VkGraphicsPipelineCreateInfo info{
+                    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+                    .pNext = &format_info,
+                    .stageCount = std::size(shadow_stage_infos),
+                    .pStages = shadow_stage_infos,
+                    .pVertexInputState = &shadow_input_state_info,
+                    .pInputAssemblyState = &assembly_state_info,
+                    .pViewportState = &viewport_info,
+                    .pRasterizationState = &shadow_raster_info,
+                    .pMultisampleState = &sample_info,
+                    .pDepthStencilState = &depth_info,
+                    .pColorBlendState = &shadow_blend_info,
+                    .pDynamicState = &shadow_dyn_state_info,
+                    .layout = shadow.pipeline_layout,
+                };
 
-            // Какие форматы компонентов изображения стоит ожидать граф. конвейеру
-            VkPipelineRenderingCreateInfoKHR format_info{
-                .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
-                .colorAttachmentCount = 1,
-                .pColorAttachmentFormats = &os_color_image_format,
-                .depthAttachmentFormat = os_depth_image_format,
-            };
-
-            VkGraphicsPipelineCreateInfo info{
-                .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-                .pNext = &format_info, // VkPipelineRenderingCreateInfo является расширением
-                .stageCount = 2,
-                .pStages = stage_infos,
-                .pVertexInputState = &input_state_info,
-                .pInputAssemblyState = &assembly_state_info,
-                .pViewportState = &viewport_info,
-                .pRasterizationState = &raster_info,
-                .pMultisampleState = &sample_info,
-                .pDepthStencilState = &depth_info,
-                .pColorBlendState = &blend_info,
-                .pDynamicState = &dyn_state_info,
-                .layout = pipeline_layout,
-                .renderPass = nullptr
-            };
-
-            vkCreateGraphicsPipelines(device, nullptr, 1, &info, nullptr, &offscreen_pipeline);
+                vkCreateGraphicsPipelines(device, nullptr, 1, &info, nullptr, &shadow.pipeline);
+            }
         }
 
         {
@@ -766,6 +941,36 @@ namespace {
                 max_spot_lights * sizeof(SpotLight),
                 nullptr,
                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+            shadow.uniform_buffer = new veekay::graphics::Buffer(
+                sizeof(veekay::mat4),
+                nullptr,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+
+        }
+
+        {
+            VkSamplerCreateInfo info{
+                .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+                .magFilter = VK_FILTER_LINEAR,
+                .minFilter = VK_FILTER_LINEAR,
+                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                // Если вышли за пределы текстурных координат, то рисуем цвет бортика
+                .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            // Текстура поддерживает сравнение глубины
+                .compareEnable = true,
+                .compareOp = VK_COMPARE_OP_LESS,
+                .minLod = 0.0f,
+                .maxLod = VK_LOD_CLAMP_NONE,
+                // Если вышли за пределы текстурных координат, рисуем белый цвет бортика???
+                .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
+            };
+
+            vkCreateSampler(device, &info, nullptr, &shadow.sampler);
+
         }
 
         {
@@ -824,6 +1029,42 @@ namespace {
         {
             VkDescriptorBufferInfo buffer_infos[] = {
                 {
+                    .buffer = shadow.uniform_buffer->buffer,
+                    .offset = 0,
+                    .range = sizeof(veekay::mat4)
+                },
+                {
+                    .buffer = model_uniforms_buffer->buffer,
+                    .range = sizeof(ModelUniforms),
+                },
+            };
+
+            VkWriteDescriptorSet write_infos[] = {
+                { // Тут матрица проекции для теневой текстуры
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .dstSet = shadow.descriptor_set,
+                    .dstBinding = 0,
+                    .descriptorCount = 1,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    .pBufferInfo = &buffer_infos[0],
+                },
+                { // Тут структура информации про модель (ModelUniforms)
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .dstSet = shadow.descriptor_set,
+                    .dstBinding = 1,
+                    .descriptorCount = 1,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                    .pBufferInfo = &buffer_infos[1],
+                },
+            };
+
+            vkUpdateDescriptorSets(device, std::size(write_infos),
+                                   write_infos, 0, nullptr);
+        }
+
+        {
+            VkDescriptorBufferInfo buffer_infos[] = {
+                {
                     .buffer = scene_uniforms_buffer->buffer,
                     .offset = 0,
                     .range = sizeof(SceneUniforms),
@@ -842,6 +1083,14 @@ namespace {
                     .buffer = spot_lights_buffer->buffer,
                     .offset = 0,
                     .range = max_spot_lights * sizeof(SpotLight),
+                },
+            };
+
+            VkDescriptorImageInfo image_infos[] = {
+                {
+                    .sampler = shadow.sampler,
+                    .imageView = shadow.depth_image_view,
+                    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 }
             };
 
@@ -882,6 +1131,14 @@ namespace {
                     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                     .pBufferInfo = &buffer_infos[3],
                 },
+                {
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .dstBinding = 4,
+                    .descriptorCount = 1,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .pImageInfo = &image_infos[0],
+                }
+
             };
 
             vkUpdateDescriptorSets(device, std::size(write_infos),
@@ -1194,15 +1451,13 @@ namespace {
         vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
         vkDestroyDescriptorPool(device, material_descriptor_pool, nullptr);
 
-        vkDestroyImage(device, os_color_image, nullptr);
-        vkDestroyImage(device, os_depth_image, nullptr);
-        vkDestroyImageView(device, os_color_image_view, nullptr);
-        vkDestroyImageView(device, os_depth_image_view, nullptr);
-        vkFreeMemory(device, os_color_image_memory, nullptr);
-        vkFreeMemory(device, os_depth_image_memory, nullptr);
+        vkDestroyImage(device, shadow.depth_image, nullptr);
+        vkDestroyImageView(device, shadow.depth_image_view, nullptr);
+        vkFreeMemory(device, shadow.depth_image_memory, nullptr);
 
-        vkDestroyPipeline(device, offscreen_pipeline, nullptr);
+        vkDestroyPipeline(device, shadow.pipeline, nullptr);
         vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
+        vkDestroyPipelineLayout(device, shadow.pipeline_layout, nullptr);
         vkDestroyShaderModule(device, fragment_shader_module, nullptr);
         vkDestroyShaderModule(device, vertex_shader_module, nullptr);
     }
@@ -1325,6 +1580,7 @@ namespace {
         const float aspect_ratio = static_cast<float>(veekay::app.window_width) / static_cast<float>(veekay::app.window_height);
         SceneUniforms scene_uniforms{
             .view_projection = camera.view_projection(aspect_ratio, view_mat),
+            .shadow_projection = shadow.matrix,
             .view_position = camera.position,
             .ambient_light_intensity = {0.075f, 0.075f, 0.075f},
             .sun_light_direction = {0.2f, 0.4f, 0.3f},
@@ -1343,6 +1599,10 @@ namespace {
             uniforms.material.specular_color = model.material->specular_color;
             uniforms.material.shininess = model.material->shininess;
         }
+
+        shadow.matrix = camera.look_at(camera.position + veekay::vec3{-4, -4, -4}) * veekay::mat4::ortho(-10, 10, -10, 10, 1, 100);
+
+        *reinterpret_cast<veekay::mat4*>(shadow.uniform_buffer->mapped_region) = shadow.matrix;
 
         *static_cast<SceneUniforms *>(scene_uniforms_buffer->mapped_region) = scene_uniforms;
 
@@ -1394,29 +1654,28 @@ namespace {
         }
 
         {
-
-            VkImageMemoryBarrier barrier{
-                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-                .srcAccessMask = 0,
-                .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, // Запись должна быть доступна после барьера!
-                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,                // Переводим из неопределенного формата в формат
-                .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, // оптимальный для записи цвета граф. конвейеру
-                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .image = os_color_image,
-                .subresourceRange{
-                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .levelCount = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1,
-                },
-            };
-
-            vkCmdPipelineBarrier(cmd,
-                                 // Останавливаемся перед тем, как происходит запись в изображение
-                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // Ждём, пока эта же стадия не завершится
-                             0, 0, nullptr, 0, nullptr, 1, &barrier);
+            // VkImageMemoryBarrier barrier{
+            //     .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            //     .srcAccessMask = 0,
+            //     .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, // Запись должна быть доступна после барьера!
+            //     .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,                // Переводим из неопределенного формата в формат
+            //     .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, // оптимальный для записи цвета граф. конвейеру
+            //     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            //     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            //     .image = os_color_image,
+            //     .subresourceRange{
+            //         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            //         .levelCount = 1,
+            //         .baseArrayLayer = 0,
+            //         .layerCount = 1,
+            //     },
+            // };
+            //
+            // vkCmdPipelineBarrier(cmd,
+            //                      // Останавливаемся перед тем, как происходит запись в изображение
+            //                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            //                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // Ждём, пока эта же стадия не завершится
+            //                  0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
 
         {
@@ -1428,7 +1687,7 @@ namespace {
                 .newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, // оптимальный для записи глубины конвейеру
                 .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                 .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .image = os_depth_image, // Переводим конечно же текстуру/изображение глубины
+                .image = shadow.depth_image, // Переводим конечно же текстуру/изображение глубины
                 .subresourceRange{
                     .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT, // Это изображение точно используется для глубины :^)
                     .levelCount = 1,
@@ -1444,6 +1703,96 @@ namespace {
                              VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
                              VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                              0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+        }
+
+        {
+            VkRenderingAttachmentInfoKHR depth_attachment{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+                .imageView = shadow.depth_image_view,
+                .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue = { .depthStencil = {1.0f, 0} },
+            };
+
+            VkRenderingInfoKHR rendering_info{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
+                .renderArea = {0, 0, shadow_map_size, shadow_map_size},
+                .layerCount = 1,
+                .pDepthAttachment = &depth_attachment,
+            };
+
+            vkCmdBeginRenderingKHR(cmd, &rendering_info);
+
+            VkViewport viewport{
+                .x = 0.0f, .y = 0.0f,
+                .width = static_cast<float>(shadow_map_size),
+                .height = static_cast<float>(shadow_map_size),
+                .minDepth = 0.0f, .maxDepth = 1.0f,
+            };
+
+            vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+            // Добавляем смещение при записи глубины 1.25
+            vkCmdSetDepthBias(cmd, 1.25f, 0.0f, 1.0f);
+
+            VkRect2D scissor = {0, 0, shadow_map_size, shadow_map_size};
+            vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow.pipeline);
+            VkDeviceSize zero_offset = 0;
+
+            VkBuffer current_vertex_buffer = VK_NULL_HANDLE;
+            VkBuffer current_index_buffer = VK_NULL_HANDLE;
+
+            const size_t model_uniforms_alignment =
+                    veekay::graphics::Buffer::structureAlignment(sizeof(ModelUniforms));
+
+            for (size_t i = 0, n = models.size(); i < n; ++i) {
+                const Model &model = models[i];
+                const Mesh &mesh = model.mesh;
+
+                if (current_vertex_buffer != mesh.vertex_buffer->buffer) {
+                    current_vertex_buffer = mesh.vertex_buffer->buffer;
+                    vkCmdBindVertexBuffers(cmd, 0, 1, &current_vertex_buffer, &zero_offset);
+                }
+
+                if (current_index_buffer != mesh.index_buffer->buffer) {
+                    current_index_buffer = mesh.index_buffer->buffer;
+                    vkCmdBindIndexBuffer(cmd, current_index_buffer, zero_offset, VK_INDEX_TYPE_UINT32);
+                }
+
+                uint32_t offset = i * model_uniforms_alignment;
+                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadow.pipeline_layout,
+                                        0, 2, &shadow.descriptor_set, 1, &offset);
+
+                vkCmdDrawIndexed(cmd, mesh.indices, 1, 0, 0, 0);
+            }
+
+            vkCmdEndRenderingKHR(cmd);
+
+            VkImageMemoryBarrier barrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, // Ждем, пока запись не завершится
+                .dstAccessMask = 0,
+                .oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, // Переводим из формата для рисования
+                .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, // в формат для сэмплирования
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = shadow.depth_image,
+                .subresourceRange{
+                    .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1,
+                },
+            };
+
+            vkCmdPipelineBarrier(cmd,
+                               VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                               0, 0, nullptr, 0, nullptr, 1, &barrier);
 
         }
 

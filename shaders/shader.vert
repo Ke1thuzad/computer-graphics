@@ -7,9 +7,11 @@ layout (location = 2) in vec2 v_uv;
 layout (location = 0) out vec3 f_position;
 layout (location = 1) out vec3 f_normal;
 layout (location = 2) out vec2 f_uv;
+layout (location = 3) out vec4 f_shadow_position;
 
 layout (binding = 0, std140) uniform SceneUniforms {
 	mat4 view_projection;
+	mat4 shadow_projection;
 };
 
 layout (binding = 1, std140) uniform ModelUniforms {
@@ -26,4 +28,5 @@ void main() {
 	f_position = position.xyz;
 	f_normal = normal.xyz;
 	f_uv = v_uv;
+	f_shadow_position = shadow_projection * position;
 }

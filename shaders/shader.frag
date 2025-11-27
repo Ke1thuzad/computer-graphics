@@ -14,6 +14,7 @@ struct SpotLight {
 layout (location = 0) in vec3 f_position;
 layout (location = 1) in vec3 f_normal;
 layout (location = 2) in vec2 f_uv;
+layout (location = 3) in vec4 f_shadow_position;
 
 layout (location = 0) out vec4 final_color;
 
@@ -44,9 +45,12 @@ layout (set = 0, binding = 3, std430) readonly buffer SpotLights {
 	SpotLight spot_lights[];
 };
 
+layout(set = 0, binding = 4) uniform sampler2DShadow shadow_texture;
+
 layout (set = 1, binding = 0) uniform sampler2D albedo_texture;
 layout (set = 1, binding = 1) uniform sampler2D specular_texture;
 layout (set = 1, binding = 2) uniform sampler2D emissive_texture;
+
 
 vec3 blinn_phong(vec3 light_dir, vec3 light_color, vec3 view_dir, vec3 normal, vec3 albedo, vec3 specular_color, float shininess) {
 	vec3 half_vector = normalize(light_dir + view_dir);
@@ -68,6 +72,8 @@ void main() {
 
 //	uv.x += sin(f_uv.y * freq) * amplitude;
 //	uv.y += cos(f_uv.x * freq) * amplitude;
+
+	vec3 shadow_position = f_shadow_position.xyz / f_shadow_position.w;
 
 	vec3 albedo_texel = texture(albedo_texture, uv).rgb;
 	vec3 specular_map = texture(specular_texture, uv).rgb;
@@ -169,5 +175,13 @@ void main() {
 		}
 	}
 
-	final_color = vec4((sun_color + point_lights_color + spot_lights_color) * (1 - emissive_map) + albedo_color_final * emissive_map, 1.0f);
+	float shadow = texture(shadow_texture, shadow_position).r;
+
+	vec3 combined_light_color = sun_color + point_lights_color + spot_lights_color;
+
+	vec3 emissive_enabled = combined_light_color * (1 - emissive_map) + albedo_color_final * emissive_map;
+
+	vec3 shadow_enabled = emissive_enabled * shadow;
+
+	final_color = vec4(shadow_enabled, 1.0f);
 }
