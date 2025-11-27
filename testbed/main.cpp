@@ -931,11 +931,12 @@ namespace {
             (camera.position, {0.81f, 0.42f, 0.15f}, {0, 0, 1}, 10, 0.91f, 0.82f)
         );
 
-        getMaterial("mandarinka")->shininess = 5000;
+        // getMaterial("mandarinka")->shininess = 5000;
 
-        models[0].material = getMaterial("mandarinka");
+        models[0].material = getMaterial("angry");
         models[1].material = getMaterial("lenna");
         models[2].material = getMaterial("okak");
+        // models[3].material = getMaterial("mandarinka");
         models[4].material = getMaterial("hehe");
     }
 
