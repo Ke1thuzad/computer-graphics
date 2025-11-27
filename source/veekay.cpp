@@ -144,8 +144,19 @@ int veekay::run(const veekay::ApplicationInfo &app_info) {
             .samplerAnisotropy = true,
         };
 
+        std::vector<const char*> device_extensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+        };
+
+        VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_feature{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+            .dynamicRendering = VK_TRUE,
+        };
+
         auto selector_result = physical_device_selector.set_surface(vk_surface)
                 .set_required_features(device_features)
+                .add_required_extensions(device_extensions)
                 .select();
         if (!selector_result) {
             std::cerr << selector_result.error().message() << '\n';
@@ -155,9 +166,11 @@ int veekay::run(const veekay::ApplicationInfo &app_info) {
         auto physical_device = selector_result.value();
 
         {
+
             vkb::DeviceBuilder device_builder(physical_device);
 
-            auto result = device_builder.build();
+            auto result = device_builder.add_pNext(&dynamic_rendering_feature)
+                .build();
 
             if (!result) {
                 std::cerr << result.error().message() << '\n';
