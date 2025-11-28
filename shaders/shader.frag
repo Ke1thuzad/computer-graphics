@@ -15,11 +15,14 @@ layout (location = 0) in vec3 f_position;
 layout (location = 1) in vec3 f_normal;
 layout (location = 2) in vec2 f_uv;
 layout (location = 3) in vec4 f_shadow_position;
+layout (location = 4) in vec4 f_spot_shadow_position;
 
 layout (location = 0) out vec4 final_color;
 
 layout (set = 0, binding = 0, std140) uniform SceneUniforms {
 	mat4 view_projection;
+	mat4 shadow_projection;
+	mat4 spot_shadow_projection;
 	vec3 view_position;
 
 	vec3 ambient_light_intensity;
@@ -27,7 +30,7 @@ layout (set = 0, binding = 0, std140) uniform SceneUniforms {
 	vec3 sun_light_direction;
 	vec3 sun_light_color;
 
-	layout (offset = 128) uint point_lights_count;
+	layout (offset = 256) uint point_lights_count;
 	uint spot_lights_count;
 };
 
@@ -46,6 +49,7 @@ layout (set = 0, binding = 3, std430) readonly buffer SpotLights {
 };
 
 layout(set = 0, binding = 4) uniform sampler2DShadow shadow_texture;
+layout(set = 0, binding = 5) uniform sampler2DShadow spot_shadow_texture;
 
 layout (set = 1, binding = 0) uniform sampler2D albedo_texture;
 layout (set = 1, binding = 1) uniform sampler2D specular_texture;
@@ -74,6 +78,8 @@ void main() {
 //	uv.y += cos(f_uv.x * freq) * amplitude;
 
 	vec3 shadow_position = f_shadow_position.xyz / f_shadow_position.w;
+
+	shadow_position.xy = shadow_position.xy * 0.5 + 0.5;
 
 	vec3 albedo_texel = texture(albedo_texture, uv).rgb;
 	vec3 specular_map = texture(specular_texture, uv).rgb;
@@ -171,17 +177,30 @@ void main() {
 			shininess
 			);
 
-			spot_lights_color += falloff * dimming * light_intensity;
+			float shadow_factor = 1.0;
+
+			if (i == 0) {
+				vec3 spot_coords = f_spot_shadow_position.xyz / f_spot_shadow_position.w;
+				spot_coords.xy = spot_coords.xy * 0.5 + 0.5;
+
+				// Проверка границ, чтобы тень не дублировалась за пределами карты
+				if (spot_coords.z > -1.0 && spot_coords.z < 1.0 &&
+				spot_coords.x > 0.0 && spot_coords.x < 1.0 &&
+				spot_coords.y > 0.0 && spot_coords.y < 1.0)
+				{
+					shadow_factor = texture(spot_shadow_texture, spot_coords).r;
+				}
+			}
+
+			spot_lights_color += falloff * dimming * light_intensity * shadow_factor;
 		}
 	}
 
 	float shadow = texture(shadow_texture, shadow_position).r;
 
-	vec3 combined_light_color = sun_color + point_lights_color + spot_lights_color;
+	vec3 combined_light_color = sun_color * shadow + point_lights_color + spot_lights_color;
 
 	vec3 emissive_enabled = combined_light_color * (1 - emissive_map) + albedo_color_final * emissive_map;
 
-	vec3 shadow_enabled = emissive_enabled * shadow;
-
-	final_color = vec4(shadow_enabled, 1.0f);
+	final_color = vec4(emissive_enabled, 1.0f);
 }

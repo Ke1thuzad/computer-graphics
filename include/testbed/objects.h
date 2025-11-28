@@ -94,7 +94,7 @@ struct Camera {
     veekay::mat4 view_projection(float aspect_ratio, const veekay::mat4 &view) const;
 };
 
-struct {
+inline struct {
     // Объекты для изображения, куда будет записываться информация о глубине
     VkFormat depth_image_format;
     VkImage depth_image;
@@ -114,6 +114,19 @@ struct {
 
     veekay::mat4 matrix; // Сама матрица проекции теней
 } shadow;
+
+inline struct {
+    VkImage depth_image;
+    VkImageView depth_image_view;
+    VkDeviceMemory depth_image_memory;
+    VkFormat depth_image_format;
+
+    VkDescriptorSet descriptor_set;
+
+    veekay::graphics::Buffer* uniform_buffer;
+
+    veekay::mat4 matrix;
+} spotShadow;
 
 
 #endif //VEEKAY_OBJECTS_H

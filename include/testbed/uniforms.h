@@ -12,6 +12,7 @@ struct MaterialUniform {
 struct SceneUniforms {
     veekay::mat4 view_projection;
     veekay::mat4 shadow_projection;
+    veekay::mat4 spot_shadow_projection;
     veekay::vec3 view_position;
     float _pad0;
 
