@@ -71,11 +71,11 @@ vec3 blinn_phong(vec3 light_dir, vec3 light_color, vec3 view_dir, vec3 normal, v
 void main() {
 	vec2 uv = f_uv;
 
-	float freq = 15;
+	float frequency = 10;
 	float amplitude = 0.1f;
 
-//	uv.x += sin(f_uv.y * freq) * amplitude;
-//	uv.y += cos(f_uv.x * freq) * amplitude;
+//	uv.x += sin(f_uv.y * frequency) * amplitude;
+//	uv.y += cos(f_uv.x * frequency) * amplitude;
 
 	vec3 shadow_position = f_shadow_position.xyz / f_shadow_position.w;
 

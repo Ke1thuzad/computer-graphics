@@ -1358,8 +1358,6 @@ namespace {
             createColorMaterial({1.0f, 0.5f, 0.1f}, {1.0f, 1.0f, 1.0f}, 10000.0f, "orange");
             createColorMaterial({0.6f, 1.0f, 0.2f}, {1.0f, 1.0f, 1.0f}, 10.0f, "green");
             createColorMaterial({0.3f, 0.1f, 1.0f}, {1.0f, 1.0f, 1.0f}, 25.0f, "blue");
-
-            // createTextureMaterial(cmd, "mandarinka_spec", "./assets/textures/mandarinka.png", "./assets/textures/mandarinka_emissive.png");
         }
 
         models.emplace_back(Model{
@@ -1409,7 +1407,7 @@ namespace {
             .transform = Transform{
                 .position = {1.5f, -2.5f, 0.5f},
             },
-            .material = getMaterial("green")
+            .material = getMaterial("okak")
         });
 
         models.emplace_back(Model{
@@ -1418,7 +1416,7 @@ namespace {
                 .position = {0.5f, -1.5f, 1.0f},
                 .scale = {2, 1, 1},
             },
-            .material = getMaterial("blue")
+            .material = getMaterial("okak")
         });
 
         point_lights.emplace_back(PointLight
@@ -1429,9 +1427,9 @@ namespace {
             (camera.position, {0.81f, 0.42f, 0.15f}, {0, 0, 1}, 10, 0.91f, 0.82f)
         );
 
-        getMaterial("mandarinka")->shininess = 5000;
+        getMaterial("okak")->shininess = 3000;
 
-        models[0].material = getMaterial("mandarinka");
+        models[0].material = getMaterial("angry");
         models[1].material = getMaterial("lenna");
         models[2].material = getMaterial("okak");
         models[4].material = getMaterial("hehe");
